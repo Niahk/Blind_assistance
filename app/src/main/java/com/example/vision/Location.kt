@@ -10,6 +10,9 @@ import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
 import android.provider.Settings
+import android.speech.tts.TextToSpeech
+import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -20,8 +23,10 @@ import java.util.*
 
 
 
-class Location : AppCompatActivity(){
+class Location : AppCompatActivity(), View.OnClickListener, TextToSpeech.OnInitListener{
 
+    var locate = ""
+    private var tts: TextToSpeech? = null
     private lateinit var mainBinding: ActivityLocationBinding
     private lateinit var mFusedLocationClient: FusedLocationProviderClient
     private val permissionId = 2
@@ -30,6 +35,7 @@ class Location : AppCompatActivity(){
         mainBinding = ActivityLocationBinding.inflate(layoutInflater)
         setContentView(R.layout.activity_location)
         setContentView(mainBinding.root)
+        tts = TextToSpeech(this, this)
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         mainBinding.btnLocation.setOnClickListener {
             getLocation()
@@ -51,6 +57,9 @@ class Location : AppCompatActivity(){
                             tvCountryName.text = "Country Name\n${list[0].countryName}"
                             tvLocality.text = "Locality\n${list[0].locality}"
                             tvAddress.text = "Address\n${list[0].getAddressLine(0)}"
+                            locate = list[0].getAddressLine(0);
+                            val bst = "Your Address is " + locate + " "
+                            tts?.speak(bst, TextToSpeech.QUEUE_FLUSH, null, null)
                         }
                     }
                 }
@@ -108,6 +117,25 @@ class Location : AppCompatActivity(){
             if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                 getLocation()
             }
+        }
+    }
+
+    override fun onInit(p0: Int) {
+        Log.d(TAG, "Initializing TTS")
+        if (p0 == TextToSpeech.SUCCESS) {
+            Log.d(TAG, "SUCCESS")
+            tts!!.language = Locale.US
+            tts?.speak(
+                "Current Location Open Please tap on Screen",
+                TextToSpeech.QUEUE_FLUSH, null, null
+            )
+        }
+    }
+
+    override fun onClick(view: View) {
+        if (view.id == R.id.tv_address) {
+            val bst = "Your Address is " + locate + " "
+            tts?.speak(bst, TextToSpeech.QUEUE_FLUSH, null, null)
         }
     }
 }
